@@ -95,9 +95,9 @@ def main():
                             "tags": "disk_space_paused",
                         },
                     )
-                    logging.info(
-                        f"Paused {len(to_pause)} torrent{'s' if len(to_pause) > 1 else ''} due to low disk space."
-                    )
+                logging.info(
+                    f"Paused {len(to_pause)} torrent{'s' if len(to_pause) != 1 else ''} due to low disk space."
+                )
             elif ENABLE_AUTO_RESUME:
                 to_resume = [
                     t["hash"]
@@ -116,9 +116,9 @@ def main():
                             "tags": "disk_space_paused",
                         },
                     )
-                    logging.info(
-                        f"Resumed {len(to_resume)} torrent{'s' if len(to_resume) > 1 else ''} as disk space is sufficient."
-                    )
+                logging.info(
+                    f"Resumed {len(to_resume)} torrent{'s' if len(to_resume) != 1 else ''} as disk space is sufficient."
+                )
 
             user_resumed = [
                 t["hash"]
@@ -135,7 +135,7 @@ def main():
                     },
                 )
                 logging.info(
-                    f"Untagged {len(user_resumed)} torrent{'s' if len(user_resumed) > 1 else ''} resumed by user action."
+                    f"Untagged {len(user_resumed)} torrent{'s' if len(user_resumed) != 1 else ''} resumed by user action."
                 )
         except httpx.HTTPError as error:
             logging.warning(f"Error communicating with qBittorrent: {error}")
