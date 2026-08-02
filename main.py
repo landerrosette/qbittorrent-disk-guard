@@ -55,8 +55,8 @@ def to_hashes_str(hashes: list[str]) -> str:
 def main():
     try:
         validate_env()
-    except Exception as error:
-        logging.error(error)
+    except Exception as e:
+        logging.error(e)
         sys.exit(1)
 
     client = httpx.Client(
@@ -72,9 +72,9 @@ def main():
 
             if get_free_space_gb(FREE_SPACE_PATH) < MIN_FREE_SPACE_GB:
                 to_pause = [
-                    t["hash"]
-                    for t in torrents
-                    if t["state"]
+                    torrent["hash"]
+                    for torrent in torrents
+                    if torrent["state"]
                     in (
                         "allocating",
                         "downloading",
@@ -100,10 +100,10 @@ def main():
                     )
             elif ENABLE_AUTO_RESUME:
                 to_resume = [
-                    t["hash"]
-                    for t in torrents
-                    if "disk_space_paused" in from_tags_str(t["tags"])
-                    and t["state"] in ("stoppedDL",)
+                    torrent["hash"]
+                    for torrent in torrents
+                    if "disk_space_paused" in from_tags_str(torrent["tags"])
+                    and torrent["state"] in ("stoppedDL",)
                 ]
                 if to_resume:
                     client.post(
@@ -121,10 +121,10 @@ def main():
                     )
 
             user_resumed = [
-                t["hash"]
-                for t in torrents
-                if "disk_space_paused" in from_tags_str(t["tags"])
-                and t["state"] not in ("stoppedDL",)
+                torrent["hash"]
+                for torrent in torrents
+                if "disk_space_paused" in from_tags_str(torrent["tags"])
+                and torrent["state"] not in ("stoppedDL",)
             ]
             if user_resumed:
                 client.post(
@@ -137,10 +137,10 @@ def main():
                 logging.info(
                     f"Untagged {len(user_resumed)} torrent{'s' if len(user_resumed) != 1 else ''} resumed by user action."
                 )
-        except httpx.HTTPError as error:
-            logging.warning(f"Error communicating with qBittorrent: {error}")
-        except Exception as error:
-            logging.error(error)
+        except httpx.HTTPError as e:
+            logging.warning(f"Error communicating with qBittorrent: {e}")
+        except Exception as e:
+            logging.error(e)
         time.sleep(CHECK_INTERVAL)
 
 
