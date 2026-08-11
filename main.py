@@ -16,7 +16,7 @@ CHECK_INTERVAL = 10
 
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s",
+    format="%(asctime)s [%(levelname)s] %(message)s",
 )
 logging.getLogger("httpx").setLevel(logging.WARNING)
 
@@ -138,7 +138,7 @@ def main():
                     f"Untagged {len(user_resumed)} torrent{'s' if len(user_resumed) != 1 else ''} resumed by user action."
                 )
         except httpx.HTTPError as e:
-            logging.warning(f"Error communicating with qBittorrent: {e}")
+            logging.warning(f"Failed to communicate with qBittorrent: {e}")
         except Exception as e:
             logging.error(e)
         time.sleep(CHECK_INTERVAL)
