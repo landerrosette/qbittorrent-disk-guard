@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
 
-import os
 import logging
+import os
 import shutil
 import sys
-import httpx
 import time
+
+import httpx
 
 QBITTORRENT_URL = os.getenv("QBITTORRENT_URL", "http://localhost:8080")
 QBITTORRENT_API_KEY = os.getenv("QBITTORRENT_API_KEY")
 FREE_SPACE_PATH = os.getenv("FREE_SPACE_PATH")
-MIN_FREE_SPACE_GB_RAW = os.getenv("MIN_FREE_SPACE_GB")
+MIN_FREE_SPACE_GB = os.getenv("MIN_FREE_SPACE_GB")
 ENABLE_AUTO_RESUME = os.getenv("ENABLE_AUTO_RESUME", "false").lower() == "true"
 CHECK_INTERVAL = 10
 
@@ -27,21 +28,22 @@ def validate_env():
         missing.append("QBITTORRENT_API_KEY")
     if FREE_SPACE_PATH is None:
         missing.append("FREE_SPACE_PATH")
-    if MIN_FREE_SPACE_GB_RAW is None:
+    if MIN_FREE_SPACE_GB is None:
         missing.append("MIN_FREE_SPACE_GB")
-    for env_var in missing:
-        logging.error(
-            f"{env_var} is not set. Please set it in the environment variables."
-        )
+
     if missing:
-        raise Exception("Missing required environment variables.")
-    if float(MIN_FREE_SPACE_GB_RAW) < 0:
-        raise Exception("MIN_FREE_SPACE_GB must be a non-negative number.")
+        for env_var in missing:
+            logging.error(
+                f"{env_var} is not set. Please set it in the environment variables."
+            )
+        raise ValueError("Missing required environment variables.")
+
+    if float(MIN_FREE_SPACE_GB) < 0:
+        raise ValueError("MIN_FREE_SPACE_GB must be a non-negative number.")
 
 
 def get_free_space_gb(path: str) -> float:
-    usage = shutil.disk_usage(path)
-    return usage.free / (1024 * 1024 * 1024)
+    return shutil.disk_usage(path).free / (1024 * 1024 * 1024)
 
 
 def from_tags_str(tags_str: str) -> set[str]:
@@ -55,7 +57,7 @@ def to_hashes_str(hashes: list[str]) -> str:
 def main():
     try:
         validate_env()
-    except Exception as e:
+    except ValueError as e:
         logging.error(e)
         sys.exit(1)
 
@@ -63,14 +65,15 @@ def main():
         base_url=f"{QBITTORRENT_URL}/api/v2",
         headers={"Authorization": f"Bearer {QBITTORRENT_API_KEY}"},
     )
-    MIN_FREE_SPACE_GB = float(MIN_FREE_SPACE_GB_RAW)
+    min_free_space_gb = float(MIN_FREE_SPACE_GB)
+
     while True:
         try:
             response = client.get("/torrents/info")
             response.raise_for_status()
             torrents = response.json()
 
-            if get_free_space_gb(FREE_SPACE_PATH) < MIN_FREE_SPACE_GB:
+            if get_free_space_gb(FREE_SPACE_PATH) < min_free_space_gb:
                 to_pause = [
                     torrent["hash"]
                     for torrent in torrents
@@ -141,6 +144,7 @@ def main():
             logging.warning(f"Failed to communicate with qBittorrent: {e}")
         except Exception as e:
             logging.error(e)
+
         time.sleep(CHECK_INTERVAL)
 
 
